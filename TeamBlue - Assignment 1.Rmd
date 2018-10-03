@@ -1,0 +1,99 @@
+---
+title: 'Classification Algorithm for Supervised Learning - Heart Disease Diagnosis'
+author: 'Tyler Blakeley, Benjamin Kan, Mohammad Islam, Avijeet Singh'
+date: 'October 12 2018'
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    fig_width: 7
+    fig_height: 4.5
+    theme: readable
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem Statement
+
+Moe to complete
+
+# Business Statements
+
+Moe to complete
+
+# Data Understanding
+
+## Data Source and Collection
+
+The data are collected from the UCI Machine Learning Repository site (https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/heart-disease.names). The datasets are originated from the four heart disease diagnosis databases from the following four locations dated July 1988:
+
+* Hungarian Institute of Cardiology. Budapest: Andras Janosi, M.D.        
+* University Hospital, Zurich, Switzerland: William Steinbrunn, M.D.        
+* University Hospital, Basel, Switzerland: Matthias Pfisterer, M.D.        
+* V.A. Medical Center, Long Beach and Cleveland Clinic Foundation: Robert Detrano, M.D., Ph.D.
+
+The four datasets originally consist of 76 attributes. However, all of the experiments referred to a subset of 14 attributes in which the UCI site also provided with another version of the datasets with these 14 attributes. We took the liberty to use the 14-attribute datasets instead for our prediction exercise.
+
+## Data Descriptions
+We aggregated the four datasets described above to create a single dataset. The attribute names along with their descriptions are listed in the table below:
+
+Variable Name | Description
+--------------|-------------------------------------------------------------------------------------------
+AGE           | Age in years
+SEX           | Sex: (1 = male; 0 = female)
+CP            | Chest Pain Type: (1:typical angina; 2:atypical angina; 3:non-anginal pain; 4:asymptomatic)
+TRESTBPS      | Resting Blood Pressure (in mm Hg on admission to the hospital)
+CHOL          | Serum Cholestoral in mg/dl
+FBS           | Fasting Blood Sugar > 120 mg/dl)  (1 = true; 0 = false)
+RESTECG       | Resting Electrocardiographic Results (0:normal; 1:having ST-T wave abnormality; 2:showing                      | probable or definite left ventricular hypertrophy) 
+THALACH       | Maximum Heart Rate Achieved
+EXANG         | Exercise Induced Angina (1 = yes; 0 = no)
+OLDPEAK       | ST Depression Induced by Exercise Relative to Rest 
+SLOPE         | The Slope of the Peak Exercise ST Segment (1:upsloping; 2:flat; 3:downsloping) 
+CA            | Number of Major Vessels (0-3) Colored by Flourosopy
+THAL          | 3 = normal; 6 = fixed defect; 7 = reversable defect
+TARGET        | Diagnosis of Heart Disease (0: < 50% diameter narrowing; 1: > 50% diameter narrowing)
+
+## Data Exploration
+
+### Load Packages
+```{r, message=FALSE}
+#import packages;
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(Hmisc)
+library(corrplot)
+library(mice)
+library(VIM)
+library(pROC)
+library(caret)
+library(sqldf)
+library(corrgram)
+library(GGally)
+library(ggthemes) 
+```
+### Load Datasets
+We can now load in the four datasets and then we merge them into one.
+
+```{r, message=FALSE}
+
+data_cleveland <- read.csv(file.choose(),header = TRUE, na.strings = c("NA","","#NA","?"))
+data_hungarian <- read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
+data_switzerland <- read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
+data_VA <- read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
+full_data <- rbind(data_cleveland,data_hungarian,data_switzerland,data_VA)
+```
+Upon initial inspection of the data, we found that the data convention for the TARGET attribute is inconsistent among the 4 datasets. Both Switzerland and VA datasets have the heart disease dignosis target variable with the values of 0, 1, 2, 3 and 4 instead of the values of 0 or 1. Here we will make the data format consistent with the data definition described above (i.e 0: < 50% diameter narrowing; 1: > 50% diameter narrowing). So we made the following adjustments on the TARGET attribute:
+```{r, message=FALSE}
+# original target variable distributions
+table(full_data$TARGET)
+full_data$TARGET <- ifelse(full_data$TARGET>=1,1,full_data$TARGET)
+# final target variable distributions
+table(full_data$TARGET)
+```
+
+
