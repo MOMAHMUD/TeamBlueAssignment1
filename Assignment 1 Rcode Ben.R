@@ -351,7 +351,22 @@ confusionMatrix(prediction,factor(test$TARGET))
 # table(testset$TARGET,ifelse(svm.pred>0.5,1,0))
 # 
 # 
-# 
-# 
+# #cross validation with SVM
+
+# #see all models able to run 
+
+names(getModelInfo())
+
+
+
+# define training control
+train_control <- trainControl(method="repeatedcv", number=10)
+# train the model
+model <- train(factor(TARGET)~., data=knnOutput, trControl=train_control, method="svmLinear")
+# summarize results
+print(model)
+model.pred <- predict(model, knnOutput)
+model.pred
+confusionMatrix(model.pred,factor(knnOutput$TARGET))
 # 
 # 
