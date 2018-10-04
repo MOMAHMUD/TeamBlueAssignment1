@@ -48,7 +48,7 @@ CP            | Chest Pain Type: (1:typical angina; 2:atypical angina; 3:non-ang
 TRESTBPS      | Resting Blood Pressure (in mm Hg on admission to the hospital)
 CHOL          | Serum Cholestoral in mg/dl
 FBS           | Fasting Blood Sugar > 120 mg/dl)  (1 = true; 0 = false)
-RESTECG       | Resting Electrocardiographic Results (0:normal; 1:having ST-T wave abnormality; 2:showing                      | probable or definite left ventricular hypertrophy) 
+RESTECG       | Resting Electrocardiographic Results (0:normal; 1:having ST-T wave abnormality; 2:showing                     | probable or definite left ventricular hypertrophy) 
 THALACH       | Maximum Heart Rate Achieved
 EXANG         | Exercise Induced Angina (1 = yes; 0 = no)
 OLDPEAK       | ST Depression Induced by Exercise Relative to Rest 

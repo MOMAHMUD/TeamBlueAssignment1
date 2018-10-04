@@ -130,6 +130,8 @@ knnOutput = knnImputation(sample_knn_input, k=5,scale=T)
 summary(knnOutput)
 summary(full_data_truncated)
 
+knnOutput$TARGET <- full_data$TARGET
+
 ggpairs(full_data_truncated[, names(full_data_truncated) %in% factor_VARS])
 ggpairs(knnOutput[, names(knnOutput) %in% factor_VARS])
 ggpairs(full_data_truncated[, !names(full_data_truncated) %in% factor_VARS])
@@ -140,10 +142,8 @@ corrgram(knnOutput, order=NULL, panel=panel.shade, text.panel=panel.txt,
          main="Correlogram After KNN")
 
 ##Model Building
-library(dismo)
+#library(dismo) 
 library(randomForest)
-
-knnOutput$TARGET <- full_data$TARGET
 train <- knnOutput[1:828,]
 test <- knnOutput[829:920,]
 
