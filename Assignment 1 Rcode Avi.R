@@ -14,10 +14,10 @@ library(GGally)
 library(ggthemes) 
 library(caret)
 
-data<-read.csv('C:/Users/avije/Desktop/York University/York University/ML1000/Assignment 1 Data/processed.cleveland.data.csv',header = TRUE, na.strings = c("NA","","#NA","?"))
-data2<-read.csv('C:/Users/avije/Desktop/York University/York University/ML1000/Assignment 1 Data/processed.hungarian.data.csv', header = TRUE, na.strings = c("NA","","#NA","?"))
-data3<-read.csv('C:/Users/avije/Desktop/York University/York University/ML1000/Assignment 1 Data/processed.switzerland.data.csv', header = TRUE, na.strings = c("NA","","#NA","?"))
-data4<-read.csv('C:/Users/avije/Desktop/York University/York University/ML1000/Assignment 1 Data/processed.va.data.csv', header = TRUE, na.strings = c("NA","","#NA","?"))
+data<-read.csv(file.choose(),header = TRUE, na.strings = c("NA","","#NA","?"))
+data2<-read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
+data3<-read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
+data4<-read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
 #Add recorid
 full_data <- rbind(data,data2,data3,data4)
 
@@ -41,6 +41,9 @@ head(full_data,10)
 #check distribution of target variable
 hist(full_data$TARGET);
 summary(full_data$TARGET);
+
+##################################### ADD THE CODE BELOW IN MARKDOWN #################################
+
 
 #Analyze data types
 str(full_data)
