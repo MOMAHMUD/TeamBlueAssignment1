@@ -20,13 +20,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Problem Statement
 
-Moe to complete
+Hospital “X” intakes severe and moderate risk patients related to cardiovascular disease. Predicting and maintaining cardiovascular disease is often expensive and tedious; involving high tech equipment, intrusive procedures and high skill manpower. Complexity of the overall process leads delay in diagnosis, providing correct treatment and incur additinal costs. 
 
 # Business Statements
 
-Moe to complete
+Every successful treatment, and path to a positive patient outcome, begins with a correct and timely diagnosis.
 
-# Data Understanding
+Hospital “X” developed a new cardiovascular screening tool using machine learning algorithm based on the cardiovascular related historic data. The screening tool will help intake and emergency service members to detect the low and high risk patients and administer correct treatment at the earliest. The new screening process will reduce patients wait time, will allow to administer correct treatment, will help to allocate proper resources and will reduce operational costs.
+
+
+# Data Understandingc
 
 ## Data Source and Collection
 
