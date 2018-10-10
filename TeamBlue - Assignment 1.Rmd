@@ -121,7 +121,7 @@ full_data$TARGET <- ifelse(full_data$TARGET>=1,1,full_data$TARGET)
 table(full_data$TARGET)
 ```
 
-Also we realize that converting the variable SEX into M & F would be more easy to visulaize instead of "1" and "0" respectively, so we replace them.
+Also we realize that converting the variable SEX into M & F would be easier to visulaize instead of "1" and "0" respectively, so we replace them.
 
 ```{r, message=FALSE,warning=FALSE}
 full_data$SEX<-ifelse(full_data$SEX==1,"M","F")
