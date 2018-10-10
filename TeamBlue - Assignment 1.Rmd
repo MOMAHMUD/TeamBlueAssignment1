@@ -41,25 +41,6 @@ The data are collected from the UCI Machine Learning Repository site (https://ar
 
 The four datasets originally consist of 76 attributes. However, all of the experiments referred to a subset of 14 attributes in which the UCI site also provided with another version of the datasets with these 14 attributes. We took the liberty to use the 14-attribute datasets instead for our prediction exercise.
 
-## Data Descriptions
-We aggregated the four datasets described above to create a single dataset. The attribute names along with their descriptions are listed in the table below:
-
-Variable Name | Description
---------------|-------------------------------------------------------------------------------------------
-AGE           | Age in years
-SEX           | Sex: (1 = male; 0 = female)
-CP            | Chest Pain Type: (1:typical angina; 2:atypical angina; 3:non-anginal pain; 4:asymptomatic)
-TRESTBPS      | Resting Blood Pressure (in mm Hg on admission to the hospital)
-CHOL          | Serum Cholestoral in mg/dl
-FBS           | Fasting Blood Sugar > 120 mg/dl)  (1 = true; 0 = false)
-RESTECG       | Resting Electrocardiographic Results (0:normal; 1:having ST-T wave abnormality; 2:showing                     | probable or definite left ventricular hypertrophy) 
-THALACH       | Maximum Heart Rate Achieved
-EXANG         | Exercise Induced Angina (1 = yes; 0 = no)
-OLDPEAK       | ST Depression Induced by Exercise Relative to Rest 
-SLOPE         | The Slope of the Peak Exercise ST Segment (1:upsloping; 2:flat; 3:downsloping) 
-CA            | Number of Major Vessels (0-3) Colored by Flourosopy
-THAL          | 3 = normal; 6 = fixed defect; 7 = reversable defect
-TARGET        | Diagnosis of Heart Disease (0: < 50% diameter narrowing; 1: > 50% diameter narrowing)
 
 ## Data Exploration
 
@@ -83,7 +64,7 @@ library(gridExtra)
 library(rattle)
 ```
 ### Load Datasets
-We can now load in the four datasets and then we merge them into one.
+Now that the packages are loaded,we can load in the four datasets.
 
 ```{r, message=FALSE}
 
@@ -91,9 +72,44 @@ data_cleveland <- read.csv(file.choose(),header = TRUE, na.strings = c("NA","","
 data_hungarian <- read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
 data_switzerland <- read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
 data_VA <- read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
+```
+
+The next step will be to merge all the datasets into one.
+
+```{r, message=FALSE}
 full_data <- rbind(data_cleveland,data_hungarian,data_switzerland,data_VA)
 ```
+
+Now lets look at the structure of the data.
+
+```{r, message=FALSE}
+str(full_data)
+```
+
+We've got a sense of our variables, their class type, and the first few observations of each. We know we're working with 920 observations of 14 variables. To make things a bit more explicit since a couple of the variable names aren't 100% illuminating, here's what we've got to deal with:
+
+Variable Name | Description
+--------------|-------------------------------------------------------------------------------------------
+AGE           | Age in years
+SEX           | Sex: (1 = male; 0 = female)
+CP            | Chest Pain Type: (1:typical angina; 2:atypical angina; 3:non-anginal pain; 4:asymptomatic)
+TRESTBPS      | Resting Blood Pressure (in mm Hg on admission to the hospital)
+CHOL          | Serum Cholestoral in mg/dl
+FBS           | Fasting Blood Sugar > 120 mg/dl)  (1 = true; 0 = false)
+RESTECG       | Resting Electrocardiographic Results (0:normal; 1:having ST-T wave abnormality; 2:showing                          | probable or definite left ventricular hypertrophy) 
+THALACH       | Maximum Heart Rate Achieved
+EXANG         | Exercise Induced Angina (1 = yes; 0 = no)
+OLDPEAK       | ST Depression Induced by Exercise Relative to Rest 
+SLOPE         | The Slope of the Peak Exercise ST Segment (1:upsloping; 2:flat; 3:downsloping) 
+CA            | Number of Major Vessels (0-3) Colored by Flourosopy
+THAL          | 3 = normal; 6 = fixed defect; 7 = reversable defect
+TARGET        | Diagnosis of Heart Disease (0: < 50% diameter narrowing; 1: > 50% diameter narrowing)
+
+
+# Feature Engineering
+
 Upon initial inspection of the data, we found that the data convention for the TARGET attribute is inconsistent among the 4 datasets. Both Switzerland and VA datasets have the heart disease dignosis target variable with the values of 0, 1, 2, 3 and 4 instead of the values of 0 or 1. Here we will make the data format consistent with the data definition described above (i.e 0: < 50% diameter narrowing; 1: > 50% diameter narrowing). So we made the following adjustments on the TARGET attribute:
+
 ```{r, message=FALSE}
 # original target variable distributions
 table(full_data$TARGET)
@@ -101,19 +117,84 @@ full_data$TARGET <- ifelse(full_data$TARGET>=1,1,full_data$TARGET)
 # final target variable distributions
 table(full_data$TARGET)
 ```
-# Data Preparation
 
-## Select Data
+Also we realize that converting the variable SEX into M & F would be more easy to visulaize instead of "1" and "0" respectively, so we replace them.
 
 ```{r, message=FALSE,warning=FALSE}
-#Analyze variable types
-str(full_data)
-#Factor Categorical variables
-factor_VARS <- c('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL')
-full_data[factor_VARS]<- lapply(full_data[factor_VARS],function(x) as.factor(x))
+full_data$SEX<-ifelse(full_data$SEX==1,"M","F")
+```
 
-# see distribution and missing values of each variable
+If you see the attribute CHOL has int. values and from common knowledge we know that we can divide the cholestrol into ranges i.e Desirable if chol is <200,"Borderline High" is chol>=200 & <=239 and "High" if it is greater than 240. We create a new column for these ranges "CHOLRANGE".
+
+```{r, message=FALSE,warning=FALSE}
+full_data$CHOLRANGE[full_data$CHOL < 200] <- 'Desirable'
+full_data$CHOLRANGE[full_data$CHOL >=200 & full_data$CHOL <= 239] <- 'Borderline High'
+full_data$CHOLRANGE[full_data$CHOL >=240] <- 'High'
+```
+
+##Is cholestrol range related to our Target Varibale?
+Now that we've taken care of splitting cholestrol into levels, we can plot it against our TARGET to see if it is related to our TARGET.
+We will convert the CHOLRANGE into factor and then work with it to get the plot.
+```{r, message=FALSE,warning=FALSE}
+full_data$CHOLRANGE<-factor(full_data$CHOLRANGE)
+attach(full_data)
+freq_tbl_cholrange=table(CHOLRANGE)
+head(freq_tbl_cholrange)
+freq_xtab_cholrange=xtabs(~CHOLRANGE+TARGET)
+head(freq_xtab_cholrange)
+barplot(freq_tbl_cholrange)
+barplot(freq_xtab_cholrange, legend=rownames(freq_xtab_cholrange), ylab="Number of People", xlab="Target", col=c("mistyrose2","mistyrose4","navajowhite3"), beside=T, las=1)
+mosaicplot(table(full_data$CHOLRANGE, full_data$TARGET), main='CHOLESTROL RANGE VS TARGET', shade=TRUE)
+```
+
+From this we dont really see any relation between the cholestrol range and the TARGET.So we keep exploring other attributes in order to see any relation with the TARGET.
+
+Lets look at C.P w.r.t. our Target Variable.
+```{r, message=FALSE,warning=FALSE}
+attach(full_data)
+freq_tbl_CP=table(CP)
+head(freq_tbl_CP)
+freq_xtab_CP=xtabs(~CP+TARGET)
+head(freq_xtab_CP)
+barplot(freq_xtab_CP, legend=rownames(freq_xtab_CP), ylab="Patients", xlab="Target", col=c("mistyrose2","mistyrose4","navajowhite4","lightsteelblue4"), beside=T, las=1)
+```
+
+From this plot we can see that patients with CP(Chest paint Type) 4 is more prone to have >50% diameter narrowing(TARGET=1)
+
+# Missing Data
+
+Now we're ready to start exploring missing data and rectifying it through imputation.
+
+##Summary of the data
+First let us summarize the data and see how it looks like.
+```{r, message=FALSE,warning=FALSE}
 summary(full_data)
+```
+
+We can see that the attributes('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET') are all factor variables so we conver them into factors
+
+```{r, message=FALSE,warning=FALSE}
+factor_VARS <- c('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET')
+full_data[factor_VARS]<- lapply(full_data[factor_VARS],function(x) as.factor(x))
+```
+
+We have successfully converted all categorical variable in our data set to factors.  Analyzing all the variables we found some that have missing values.  There was a couple variables that caught our attention **CA**  with `r round(sum(is.na(full_data$CA)) / nrow(full_data)*100)` % missing data, **SLOPE** with `r round(sum(is.na(full_data$SLOPE)) / nrow(full_data)*100)` % missing data 
+and **THAL** with `r round(sum(is.na(full_data$THAL)) / nrow(full_data)*100)` % missing data.  Since these varibales have a high percent of missing data we chose to remove them.
+
+```{r, message=FALSE,warning=FALSE} 
+full_data_truncated<-as.data.frame(full_data[, !names(full_data) %in% c("THAL","CA","SLOPE")])
+summary(full_data_truncated)
+``` 
+
+#lets check for outliers in TRESTBPS,CHOL,THALACH AND OLDPEAK USING BOXPLOTS.
+```{r, message=FALSE,warning=FALSE}
+boxplot(full_data_truncated$CHOL,ylab='Resting blood pressure',main='Boxplot distribution of Cholestrol')
+boxplot(full_data_truncated$TRESTBPS,ylab='Resting blood pressure',main='Boxplot distribution of TRESTBPS')
+boxplot(full_data_truncated$THALACH,ylab='Resting blood pressure',main='Boxplot distribution of THALACH')
+boxplot(full_data_truncated$OLDPEAK,ylab='ST Depression Induced by Exercise Relative to Rest',main='Boxplot distribution of OLDPEAK')
+```
+```{r, message=FALSE,warning=FALSE}
+
 #add some graphs to show before distribution
 
 
@@ -128,8 +209,6 @@ full_data_truncated<-as.data.frame(full_data[, !names(full_data) %in% c("THAL","
 
 
 ```
-After inputing the data, we converted all categorical variable in our data set to factors.  Analyzing all the variables we found some that have missing values.  There was a couple variables that caught our attention **CA**  with `r round(sum(is.na(full_data$CA)) / nrow(full_data)*100)` % missing data, **SLOPE** with `r round(sum(is.na(full_data$SLOPE)) / nrow(full_data)*100)` % missing data 
-and **THAL** with `r round(sum(is.na(full_data$THAL)) / nrow(full_data)*100)` % missing data.  Since these varibales have a high percent of missing data we chose to remove them.
 ## Impute Missing Values
 ```{r, message=FALSE,warning=FALSE}
 #Impute missing values using KNN algorithm,remove TARGET variable from KNN
