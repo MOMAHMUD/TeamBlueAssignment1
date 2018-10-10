@@ -62,6 +62,9 @@ library(ggthemes)
 library(DMwR)
 library(gridExtra)
 library(rattle)
+library(randomForest)
+library(mlbench)
+library(e1071)
 ```
 ### Load Datasets
 Now that the packages are loaded,we can load in the four datasets.
@@ -132,34 +135,116 @@ full_data$CHOLRANGE[full_data$CHOL >=200 & full_data$CHOL <= 239] <- 'Borderline
 full_data$CHOLRANGE[full_data$CHOL >=240] <- 'High'
 ```
 
-##Is cholestrol range related to our Target Varibale?
-Now that we've taken care of splitting cholestrol into levels, we can plot it against our TARGET to see if it is related to our TARGET.
-We will convert the CHOLRANGE into factor and then work with it to get the plot.
+Lastly,we can see that the attributes('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET','CHOLRANGE') are all factor variables so we conver them into factors
+
 ```{r, message=FALSE,warning=FALSE}
-full_data$CHOLRANGE<-factor(full_data$CHOLRANGE)
-attach(full_data)
-freq_tbl_cholrange=table(CHOLRANGE)
-head(freq_tbl_cholrange)
-freq_xtab_cholrange=xtabs(~CHOLRANGE+TARGET)
-head(freq_xtab_cholrange)
-barplot(freq_tbl_cholrange)
-barplot(freq_xtab_cholrange, legend=rownames(freq_xtab_cholrange), ylab="Number of People", xlab="Target", col=c("mistyrose2","mistyrose4","navajowhite3"), beside=T, las=1)
-mosaicplot(table(full_data$CHOLRANGE, full_data$TARGET), main='CHOLESTROL RANGE VS TARGET', shade=TRUE)
+factor_VARS <- c('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET','CHOLRANGE')
+full_data[factor_VARS]<- lapply(full_data[factor_VARS],function(x) as.factor(x))
 ```
 
-From this we dont really see any relation between the cholestrol range and the TARGET.So we keep exploring other attributes in order to see any relation with the TARGET.
+Before we dig into data exploration let us see what our data looks like now after all the changes.
+```{r, message=FALSE,warning=FALSE}
+str(full_data)
+```
 
-Lets look at C.P w.r.t. our Target Variable.
+
+#DATA EXPLORATION
+Now we explore the data. We can divide it into two categories:
+1. Categorical Features.
+2. Numerical Features
+
+##Categorical Features
+Let us visualize the categorical data.
+###SEX
+```{r, message=FALSE,warning=FALSE}
+attach(full_data)
+freq_tbl_sex=table(SEX)
+head(freq_tbl_sex)
+barplot(freq_tbl_sex,xlab = "SEX", ylab = "Number of Patients",main = "Bar chart of Gender of Patients ",col=c("pink","navyblue"))
+```
+
+Clearly the number of male patients in this dataset are more than the female patients.
+Let us now see the relation between the Gender and our Target.
+
+```{r, message=FALSE,warning=FALSE}
+freq_xtab_sex=xtabs(~SEX+TARGET)
+barplot(freq_xtab_sex, legend=rownames(freq_xtab_sex), ylab="Number of People", xlab="Target", col=c("pink","navyblue"), beside=T, las=1)
+```
+This shows that higher proportion of males were diagnosed with the heart disease.
+
+###CP(Chest Pain)
 ```{r, message=FALSE,warning=FALSE}
 attach(full_data)
 freq_tbl_CP=table(CP)
-head(freq_tbl_CP)
+barplot(freq_tbl_CP,xlab = "Chest Pain Type", ylab = "Number of Patients",main = "Bar chart of Chest Pain",col=c("green","yellow","purple","red"))
+```
+From the plot it is evident that there are more number of patients with CP Type 4(asymptomatic).
+Now lets look at C.P w.r.t. our Target Variable.
+```{r, message=FALSE,warning=FALSE}
 freq_xtab_CP=xtabs(~CP+TARGET)
-head(freq_xtab_CP)
-barplot(freq_xtab_CP, legend=rownames(freq_xtab_CP), ylab="Patients", xlab="Target", col=c("mistyrose2","mistyrose4","navajowhite4","lightsteelblue4"), beside=T, las=1)
+barplot(freq_xtab_CP, legend=rownames(freq_xtab_CP), ylab="Patients", xlab="Target", col=c("green","yellow","purple","red"), beside=T, las=1)
+```
+From this plot we can see that patients with CP(Chest paint Type) 4 is more prone to have the heart disease.
+
+###FBS(Fasting Blood Sugar)
+We have more number of patients with low blood sugar i.e. <120mg/L as we can see from the following plot.
+```{r, message=FALSE,warning=FALSE}
+attach(full_data)
+freq_tbl_FBS=table(FBS)
+barplot(freq_tbl_FBS,xlab = "Fasting Blood Sugar(FBS)", ylab = "Number of Patients",main = "Bar chart of FBS",col=c("purple","yellow"))
+
+```
+Now lets plot it with respect to our target variable.
+```{r, message=FALSE,warning=FALSE}
+attach(full_data)
+freq_xtab_FBS=xtabs(~FBS+TARGET)
+barplot(freq_xtab_FBS, legend=rownames(freq_xtab_FBS), ylab="Number of People", xlab="Fasting Blood Sugar(FBS)", col=c("purple","yellow"), beside=T, las=1)
+```
+The plot did not change much when the data was divided based on the presence of the heart disease although patients diagnosed with heart disease exhibited a slighlty higher level of blood sugar.
+
+###Rest ECG
+```{r, message=FALSE,warning=FALSE}
+attach(full_data)
+freq_tbl_RESTECG=table(RESTECG)
+barplot(freq_tbl_RESTECG,xlab = "RESTECG", ylab = "Number of Patients",main = "Bar chart of RESTECG",col=c("green","purple","yellow"))
+```
+0-Normal
+1-abnormal
+2-Hypertrophy
+Now lets compare with our TARGET
+```{r, message=FALSE,warning=FALSE}
+attach(full_data)
+freq_xtab_RESTECG=xtabs(~RESTECG+TARGET)
+barplot(freq_xtab_RESTECG, legend=rownames(freq_xtab_RESTECG), ylab="Number of People", xlab="RESTECG", col=c("green","purple","yellow"), beside=T, las=1)
+```
+Most patients exhibited normal RESTECG results. However, a higher proportion of diseased patients had abnormal ST wave patterns suggesting that this feature may contribute some predictive power.
+
+###EXANG- Exercise Induced Angina.
+We can see from the following plot that there are more noumber of individuals which do not have exercise induced angina.
+```{r, message=FALSE,warning=FALSE}
+attach(full_data)
+freq_tbl_EXANG=table(EXANG)
+barplot(freq_tbl_EXANG,xlab = "EXANG", ylab = "Number of Patients",main = "Bar chart of EXANG",col=c("green","purple","yellow"))
+```
+Let us compare with our TARGET.
+```{r, message=FALSE,warning=FALSE}
+attach(full_data)
+freq_xtab_EXANG=xtabs(~EXANG+TARGET)
+barplot(freq_xtab_EXANG, legend=rownames(freq_xtab_EXANG), ylab="Number of People", xlab="EXANG", col=c("green","purple"), beside=T, las=1)
+```
+In the number of individuals diagnosed with the heart disease most of them had exercise induced angina.
+This is a strong predictive attribute.
+
+We will stop here as the remaining factor attributes have a lot of missing values.
+
+##Numeric Features
+
+###Age
+Let us plot a histogram to see the distribution of ages.
+```{r, message=FALSE,warning=FALSE}
+hist(full_data$AGE,main = "Distribution of Age",xlab = "Age",ylab = "Number of People")
 ```
 
-From this plot we can see that patients with CP(Chest paint Type) 4 is more prone to have >50% diameter narrowing(TARGET=1)
 
 # Missing Data
 
@@ -171,14 +256,7 @@ First let us summarize the data and see how it looks like.
 summary(full_data)
 ```
 
-We can see that the attributes('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET') are all factor variables so we conver them into factors
-
-```{r, message=FALSE,warning=FALSE}
-factor_VARS <- c('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET')
-full_data[factor_VARS]<- lapply(full_data[factor_VARS],function(x) as.factor(x))
-```
-
-We have successfully converted all categorical variable in our data set to factors.  Analyzing all the variables we found some that have missing values.  There was a couple variables that caught our attention **CA**  with `r round(sum(is.na(full_data$CA)) / nrow(full_data)*100)` % missing data, **SLOPE** with `r round(sum(is.na(full_data$SLOPE)) / nrow(full_data)*100)` % missing data 
+Analyzing all the variables we found some that have missing values.  There was a couple variables that caught our attention **CA**  with `r round(sum(is.na(full_data$CA)) / nrow(full_data)*100)` % missing data, **SLOPE** with `r round(sum(is.na(full_data$SLOPE)) / nrow(full_data)*100)` % missing data 
 and **THAL** with `r round(sum(is.na(full_data$THAL)) / nrow(full_data)*100)` % missing data.  Since these varibales have a high percent of missing data we chose to remove them.
 
 ```{r, message=FALSE,warning=FALSE} 
@@ -327,16 +405,85 @@ ggplot(importance)
 
 ```
 
+## Additional Model
+
+Even though we used cross validation in our analysis, our decision tree model could still suffer from overfitting. One way to reduce overfitting more is to use an ensemble of decision trees called a Random Forest Model.  The Random Forest model adds more randomness to the model by creating many different decision trees and instead of choosing the best variable to split on from all variables, we only look at a subset of all variables for each split.  Once all the trees are created, the final classifier is chosen from the mode of all the trees( Ex: if 10 trees output 1 and 5 tree output 0, then the final model would output 1). The downside to Random Forest to Decision Trees is it is more computational intensive, but our dataset is small enough that it doesn't affect it much.
+
+### Tuning Random Forest
+
+```{r, message=FALSE,warning=FALSE}
+
+
+##Find Optimal number of random variables to select at each split
+
+bestmtry <- tuneRF(train_data[,1:10], train_data$TARGET, stepFactor=1.5, improve=1e-5, ntree=500,doBest = TRUE)
+tunegrid <- expand.grid(.mtry=bestmtry$mtry)
+
+#Create random forest model using optional parameters and cross validation
+RF_model <- train(factor(TARGET)~., data=train_data, method="rf",tuneGrid=tunegrid,tuneLength = 50,
+                   metric = "Accuracy",
+                   trControl = fitControl)
+
+
+```
+Using the function we were able to find the optimal number of random variables to select at each split.  The optimal number was `r bestmtry$mtry`
+
+### Accuracy
+
+```{r, message=FALSE,warning=FALSE}
+print(RF_model)
+# Predict Test results
+RF_model.pred <- predict(RF_model, test_data)
+# Check Accuracy of Model 
+RF_confus <- confusionMatrix(RF_model.pred,factor(test_data$TARGET))
+
+RF_confus
+# Plot Random Forest error
+plot(RF_model$finalModel)
+
+```
+
+The Random Forest with 500 trees and mtry of`r bestmtry$mtry` had a overall accuracy of  `r round(RF_confus$overall[1]*100,2)` compared to the decision tree model of `r round(confus$overall[1]*100,2)`.  Like the decision tree model the random forest is better at accurately classify target values of 1.  In the above graph the green line shows the error on the TARGET value of 1, the red line shows the error of classify Target value of 0 and the black line shows the Out of bag error of the random forest.  From the chart it looks like the error has yet to converge at 500 trees.  What would happen if we were to add more trees?
+
+
+### Find Optimal Tree
+
+```{r, message=FALSE,warning=FALSE}
+control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
+tunegrid <- expand.grid(.mtry=c(sqrt(ncol(train_data))))
+modellist <- list()
+# loop to iterate through random forest models with different number of trees
+for (ntree in c(1000, 1500, 2000)) {
+	fit <- train(factor(TARGET)~., data=train_data, method="rf", metric="Accuracy", tuneGrid=tunegrid, trControl=control, ntree=ntree)
+	key <- toString(ntree)
+	modellist[[key]] <- fit
+}
+# compare results
+results <- resamples(modellist)
+summary(results)
+dotplot(results)
+
+print(modellist[4])
+# Predict Test results
+RF2_model.pred <- predict(modellist$`1000`, test_data)
+RF2_model.pred
+# Check Accuracy of Model 
+RF2_confus <- confusionMatrix(factor(RF2_model.pred),factor(test_data$TARGET))
+
+
+RF2_confus
+
+
+```
+
 
 # Evaluation
+
+Once we have the business context filled out, just have to talk about the output of the model in terms of business context
+
 
 Once we have the business context filled out, just have to talk about the output of the model in terms of business context:
 * Comment on prediction accuracy and whether the model can be used for diagnosing patients
 * The top 3 measurements which could play a contributing factor to the heart disease diagnosis.
 
 # Deployment
-
-
-
-
-
