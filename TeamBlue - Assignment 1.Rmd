@@ -82,7 +82,8 @@ library(DMwR)
 library(gridExtra)
 library(rattle)
 library(randomForest)
-
+library(mlbench)
+library(e1071)
 ```
 ### Load Datasets
 We can now load in the four datasets and then we merge them into one.
@@ -249,20 +250,31 @@ ggplot(importance)
 
 
 ```
-### Additional Model
+
+## Additional Model
 
 Even though we used cross validation in our analysis, our decision tree model could still suffer from overfitting. One way to reduce overfitting more is to use an ensemble of decision trees called a Random Forest Model.  The Random Forest model adds more randomness to the model by creating many different decision trees and instead of choosing the best variable to split on from all variables, we only look at a subset of all variables for each split.  Once all the trees are created, the final classifier is chosen from the mode of all the trees( Ex: if 10 trees output 1 and 5 tree output 0, then the final model would output 1). The downside to Random Forest to Decision Trees is it is more computational intensive, but our dataset is small enough that it doesn't affect it much.
 
-#### Tuning Random Forest
+### Tuning Random Forest
 
-<<<<<<< HEAD
+```{r, message=FALSE,warning=FALSE}
 
-RF_model <- train(factor(TARGET)~., data=train_data, method="rf",tuneLength = 50, 
+
+##Find Optimal number of random variables to select at each split
+
+bestmtry <- tuneRF(train_data[,1:10], train_data$TARGET, stepFactor=1.5, improve=1e-5, ntree=500,doBest = TRUE)
+tunegrid <- expand.grid(.mtry=bestmtry$mtry)
+
+#Create random forest model using optional parameters and cross validation
+RF_model <- train(factor(TARGET)~., data=train_data, method="rf",tuneGrid=tunegrid,tuneLength = 50,
                    metric = "Accuracy",
                    trControl = fitControl)
 
 
-#### Accuracy
+```
+Using the function we were able to find the optimal number of random variables to select at each split.  The optimal number was `r bestmtry$mtry`
+
+### Accuracy
 
 ```{r, message=FALSE,warning=FALSE}
 print(RF_model)
@@ -272,27 +284,22 @@ RF_model.pred <- predict(RF_model, test_data)
 RF_confus <- confusionMatrix(RF_model.pred,factor(test_data$TARGET))
 
 RF_confus
-# Plot Decision Tree
+# Plot Random Forest error
 plot(RF_model$finalModel)
-=======
-Once we have the business context filled out, just have to talk about the output of the model in terms of business context:
-* Comment on prediction accuracy and whether the model can be used for diagnosing patients
-* The top 3 measurements which could play a contributing factor to the heart disease diagnosis.
-
-# Deployment
->>>>>>> 374008ddf6aad0a9a242942a8d996a12fba2f9a7
-
-
 
 ```
 
+The Random Forest with 500 trees and mtry of`r bestmtry$mtry` had a overall accuracy of  `r round(RF_confus$overall[1]*100,2)` compared to the decision tree model of `r round(confus$overall[1]*100,2)`.  Like the decision tree model the random forest is better at accurately classify target values of 1.  In the above graph the green line shows the error on the TARGET value of 1, the red line shows the error of classify Target value of 0 and the black line shows the Out of bag error of the random forest.  From the chart it looks like the error has yet to converge at 500 trees.  What would happen if we were to add more trees?
 
 
-# Manual Search
+### Find Optimal Tree
+
+```{r, message=FALSE,warning=FALSE}
 control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
 tunegrid <- expand.grid(.mtry=c(sqrt(ncol(train_data))))
 modellist <- list()
-for (ntree in c(1000, 1500, 2000, 2500)) {
+# loop to iterate through random forest models with different number of trees
+for (ntree in c(1000, 1500, 2000)) {
 	fit <- train(factor(TARGET)~., data=train_data, method="rf", metric="Accuracy", tuneGrid=tunegrid, trControl=control, ntree=ntree)
 	key <- toString(ntree)
 	modellist[[key]] <- fit
@@ -304,7 +311,7 @@ dotplot(results)
 
 print(modellist[4])
 # Predict Test results
-RF2_model.pred <- predict(modellist$`2500`, test_data)
+RF2_model.pred <- predict(modellist$`1000`, test_data)
 RF2_model.pred
 # Check Accuracy of Model 
 RF2_confus <- confusionMatrix(factor(RF2_model.pred),factor(test_data$TARGET))
@@ -312,8 +319,17 @@ RF2_confus <- confusionMatrix(factor(RF2_model.pred),factor(test_data$TARGET))
 
 RF2_confus
 
+
+```
+
+
 # Evaluation
 
 Once we have the business context filled out, just have to talk about the output of the model in terms of business context
 
 
+Once we have the business context filled out, just have to talk about the output of the model in terms of business context:
+* Comment on prediction accuracy and whether the model can be used for diagnosing patients
+* The top 3 measurements which could play a contributing factor to the heart disease diagnosis.
+
+# Deployment
