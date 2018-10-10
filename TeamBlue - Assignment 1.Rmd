@@ -82,6 +82,8 @@ library(ggthemes)
 library(DMwR)
 library(gridExtra)
 library(rattle)
+library(randomForest)
+
 ```
 ### Load Datasets
 We can now load in the four datasets and then we merge them into one.
@@ -248,13 +250,63 @@ ggplot(importance)
 
 
 ```
+### Additional Model
 
+Even though we used cross validation in our analysis, our decision tree model could still suffer from overfitting. One way to reduce overfitting more is to use an ensemble of decision trees called a Random Forest Model.  The Random Forest model adds more randomness to the model by creating many different decision trees and instead of choosing the best variable to split on from all variables, we only look at a subset of all variables for each split.  Once all the trees are created, the final classifier is chosen from the mode of all the trees( Ex: if 10 trees output 1 and 5 tree output 0, then the final model would output 1). The downside to Random Forest to Decision Trees is it is more computational intensive, but our dataset is small enough that it doesn't affect it much.
+
+#### Tuning Random Forest
+
+
+RF_model <- train(factor(TARGET)~., data=train_data, method="rf",tuneLength = 50, 
+                   metric = "Accuracy",
+                   trControl = fitControl)
+
+
+#### Accuracy
+
+```{r, message=FALSE,warning=FALSE}
+print(RF_model)
+# Predict Test results
+RF_model.pred <- predict(RF_model, test_data)
+# Check Accuracy of Model 
+RF_confus <- confusionMatrix(RF_model.pred,factor(test_data$TARGET))
+
+RF_confus
+# Plot Decision Tree
+plot(RF_model$finalModel)
+
+
+
+```
+
+
+
+# Manual Search
+control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
+tunegrid <- expand.grid(.mtry=c(sqrt(ncol(train_data))))
+modellist <- list()
+for (ntree in c(1000, 1500, 2000, 2500)) {
+	fit <- train(factor(TARGET)~., data=train_data, method="rf", metric="Accuracy", tuneGrid=tunegrid, trControl=control, ntree=ntree)
+	key <- toString(ntree)
+	modellist[[key]] <- fit
+}
+# compare results
+results <- resamples(modellist)
+summary(results)
+dotplot(results)
+
+print(modellist[4])
+# Predict Test results
+RF2_model.pred <- predict(modellist$`2500`, test_data)
+RF2_model.pred
+# Check Accuracy of Model 
+RF2_confus <- confusionMatrix(factor(RF2_model.pred),factor(test_data$TARGET))
+
+
+RF2_confus
 
 # Evaluation
 
 Once we have the business context filled out, just have to talk about the output of the model in terms of business context
-
-
-
 
 
