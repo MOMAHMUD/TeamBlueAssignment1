@@ -17,19 +17,18 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# Business Understanding
 
-# Problem Statement
+We work at the Peter Munk Cardiac Centre, a world leader in the diagnosis, care and treatment of patients with both simple and complex cardiac and vascular disease. Each year we incur heavy costs in diagnosing cardiovascular disease because the diagnosis process is at times lengthy and complex involving high tech equipment, intrusive procedures and high skill manpower.
 
-Hospital “X” intakes severe and moderate risk patients related to cardiovascular disease. Predicting and maintaining cardiovascular disease is often expensive and tedious; involving high tech equipment, intrusive procedures and high skill manpower. Complexity of the overall process leads delay in diagnosis, providing correct treatment and incur additinal costs. 
+At Peter Munk, we would like to develop a new cardiovascular screening tool using machine learning algorithm based on the cardiovascular related historical data. The screening tool will help the doctors to detect the development of heart diesease so that we can administer correct treatment at the earliest. The new screening process will reduce patients wait time and allow administering the correct treatment. It will also reduce operational costs where the savings could be re-allocated to where it needs.
 
-# Business Statements
+In summary, the goal for developing this machine learning model is to:
 
-Every successful treatment, and path to a positive patient outcome, begins with a correct and timely diagnosis.
+* predict heart diesease diagnosis with high level of accuracy based on the patients' body measurements and attributes.
+* Identify the top 3 measurements or attributes which could serve as important indicators for the heart disease diagnosis so that funding can be devoted to improve the facilities and apparatus that produce these measurements.
 
-Hospital “X” developed a new cardiovascular screening tool using machine learning algorithm based on the cardiovascular related historic data. The screening tool will help intake and emergency service members to detect the low and high risk patients and administer correct treatment at the earliest. The new screening process will reduce patients wait time, will allow to administer correct treatment, will help to allocate proper resources and will reduce operational costs.
-
-
-# Data Understandingc
+# Data Understanding
 
 ## Data Source and Collection
 
@@ -256,6 +255,7 @@ Even though we used cross validation in our analysis, our decision tree model co
 
 #### Tuning Random Forest
 
+<<<<<<< HEAD
 
 RF_model <- train(factor(TARGET)~., data=train_data, method="rf",tuneLength = 50, 
                    metric = "Accuracy",
@@ -274,6 +274,13 @@ RF_confus <- confusionMatrix(RF_model.pred,factor(test_data$TARGET))
 RF_confus
 # Plot Decision Tree
 plot(RF_model$finalModel)
+=======
+Once we have the business context filled out, just have to talk about the output of the model in terms of business context:
+* Comment on prediction accuracy and whether the model can be used for diagnosing patients
+* The top 3 measurements which could play a contributing factor to the heart disease diagnosis.
+
+# Deployment
+>>>>>>> 374008ddf6aad0a9a242942a8d996a12fba2f9a7
 
 
 
