@@ -264,8 +264,9 @@ full_data_truncated<-as.data.frame(full_data[, !names(full_data) %in% c("THAL","
 summary(full_data_truncated)
 ``` 
 
-#lets check for outliers in TRESTBPS,CHOL,THALACH AND OLDPEAK USING BOXPLOTS.
+
 ```{r, message=FALSE,warning=FALSE}
+#lets check for outliers in TRESTBPS,CHOL,THALACH AND OLDPEAK USING BOXPLOTS.
 boxplot(full_data_truncated$CHOL,ylab='Resting blood pressure',main='Boxplot distribution of Cholestrol')
 boxplot(full_data_truncated$TRESTBPS,ylab='Resting blood pressure',main='Boxplot distribution of TRESTBPS')
 boxplot(full_data_truncated$THALACH,ylab='Resting blood pressure',main='Boxplot distribution of THALACH')
@@ -285,15 +286,26 @@ aggr_plot = aggr(full_data, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE
 full_data_truncated<-as.data.frame(full_data[, !names(full_data) %in% c("THAL","CA","SLOPE")])
 
 
-
 ```
+
+
+
+
 ## Impute Missing Values
+
+We decided to implement a K-neareast neighbour (KNN) algorithm to impute missing values. We chose this method because it work with both categorical and continous variables. KNN wokrs by imputing the value based on the majority votes of K nearest neighbours.  To find the nearest neighbours we use a distance function (Euclidean Distance) for continous variables because we ranges for our continous variables are all different we need to tell the algorithm to re scale all our variables to the samescale. for categorical variables we use Hamming distance.  We chose K to be an odd number as this avoids ties in the voting process.
+
+
 ```{r, message=FALSE,warning=FALSE}
+
+
 #Impute missing values using KNN algorithm,remove TARGET variable from KNN
 knn_input=as.data.frame(full_data_truncated[, !names(full_data_truncated) %in% c("TARGET")])
 #Confrim structure hasnot changed except for lost of target variable
 str(knn_input)
 
+#Allow for reproducable results
+set.seed(847593)
 
 #Run KNN imputation, use built in scacle = T to rescale all data.  
 knnOutput = knnImputation(knn_input, k=7,scale=T)
@@ -307,18 +319,13 @@ aggr_plot = aggr(knnOutput, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE
 knnOutput$TARGET <- full_data$TARGET
 #Compare before and after correlation
 corr1 <- corrgram(full_data_truncated, order=NULL, panel=panel.shade, text.panel=panel.txt,
-         main="Correlogram Before Imputation")
+main="Correlogram Before Imputation")
 corr2 <- corrgram(knnOutput, order=NULL, panel=panel.shade, text.panel=panel.txt,
-         main="Correlogram After Imputation")
-
-#Chart to show before and after categorical
-
-
-
+main="Correlogram After Imputation")
 
 ```
 
-
+After implementing KNN we check to see if the correalation between all the variables has shifted at all.  The correlation should not change after imputation and the graph corrgram show this.
 
 
 # Modelling
@@ -329,8 +336,10 @@ corr2 <- corrgram(knnOutput, order=NULL, panel=panel.shade, text.panel=panel.txt
 We now have the data ready to predict our target variable (Diagnosis of Heart Disease 0: < 50% diameter narrowing; 1: > 50% diameter narrowing).  We chose to start with a Decision Tree classification model as they are very intuitive and easy to interpret.  A decision tree works by creating a tree like graph based on differenct variable splits.  These splits are made by evaluating the entropy and Information Gain of each variable split of the data. We evaluate all splits to find the best one that reduces the entropy (messiness) and returns the highest infomration gained. This is recursively run until all data is classified or a stopping criteria is met.
 
 ## Split into training & test sets
+
 ```{r, message=FALSE,warning=FALSE}
-set.seed(456292)
+#set.seed(456292)
+
 #Create index to split data
 train_set <- createDataPartition(knnOutput$TARGET, p = 0.8, list = FALSE)
 str(train_set)
@@ -343,7 +352,7 @@ prop.table(table(knnOutput$TARGET))
 #Create train and test data
 train_data <- knnOutput[train_set,]
 test_data <- knnOutput[-train_set,]
-#Allow for reproducable results
+
 
 ```
 
@@ -358,15 +367,14 @@ fitControl <- trainControl(method="cv",number=folds)
 
 #Implement Decision Tree model 
 DT_model <- train(factor(TARGET)~., data=train_data, method="rpart",tuneLength = 50, 
-                   metric = "Accuracy",
-                   trControl = fitControl)
+metric = "Accuracy",
+trControl = fitControl)
 
 
 
 ```
 
 We implemened K fold cross validation with 10 folds to find our optimal parameters for the desicion tree model.  The optimal parameters for our data was with a complexity parameter of `r DT_model$finalModel$tuneValue`.  By using K fold cross validation we are able to reduce overfitting and selection bias of the model to our training data.  The cross validation splits the data in 10 folds and creates a model using 9 folds as the training set, and the other fold as the test set.  It repeats this process for each different fold and the validation results are combined(average) from all models to create the final model.
-
 
 
 
@@ -405,6 +413,8 @@ ggplot(importance)
 
 ```
 
+The most importance variable for prediction our Target are CP with value 4, EXANG with value 1, OLDPEAK, CP with value 2, THALACH, AGE, and SEX with value M.
+
 ## Additional Model
 
 Even though we used cross validation in our analysis, our decision tree model could still suffer from overfitting. One way to reduce overfitting more is to use an ensemble of decision trees called a Random Forest Model.  The Random Forest model adds more randomness to the model by creating many different decision trees and instead of choosing the best variable to split on from all variables, we only look at a subset of all variables for each split.  Once all the trees are created, the final classifier is chosen from the mode of all the trees( Ex: if 10 trees output 1 and 5 tree output 0, then the final model would output 1). The downside to Random Forest to Decision Trees is it is more computational intensive, but our dataset is small enough that it doesn't affect it much.
@@ -421,8 +431,10 @@ tunegrid <- expand.grid(.mtry=bestmtry$mtry)
 
 #Create random forest model using optional parameters and cross validation
 RF_model <- train(factor(TARGET)~., data=train_data, method="rf",tuneGrid=tunegrid,tuneLength = 50,
-                   metric = "Accuracy",
-                   trControl = fitControl)
+metric = "Accuracy",
+trControl = fitControl)
+
+print(RF_model)
 
 
 ```
@@ -443,38 +455,59 @@ plot(RF_model$finalModel)
 
 ```
 
-The Random Forest with 500 trees and mtry of`r bestmtry$mtry` had a overall accuracy of  `r round(RF_confus$overall[1]*100,2)` compared to the decision tree model of `r round(confus$overall[1]*100,2)`.  Like the decision tree model the random forest is better at accurately classify target values of 1.  In the above graph the green line shows the error on the TARGET value of 1, the red line shows the error of classify Target value of 0 and the black line shows the Out of bag error of the random forest.  From the chart it looks like the error has yet to converge at 500 trees.  What would happen if we were to add more trees?
+The Random Forest with 500 trees and mtry of`r bestmtry$mtry` had a overall accuracy of  `r round(RF_confus$overall[1]*100,2)` compared to the decision tree model of `r round(confus$overall[1]*100,2)`.  Like the decision tree model the random forest is better at accurately classify target values of 1.  In the above graph the green line shows the error on the TARGET value of 1, the red line shows the error of classify Target value of 0 and the black line shows the Out of bag error of the random forest.  From the chart it looks like the error has converged at around 100 trees, but it does look like it is starting to coverge again around 500 trees. What would happen if we were to add more trees?
 
 
 ### Find Optimal Tree
 
 ```{r, message=FALSE,warning=FALSE}
 control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
-tunegrid <- expand.grid(.mtry=c(sqrt(ncol(train_data))))
+
 modellist <- list()
 # loop to iterate through random forest models with different number of trees
-for (ntree in c(1000, 1500, 2000)) {
-	fit <- train(factor(TARGET)~., data=train_data, method="rf", metric="Accuracy", tuneGrid=tunegrid, trControl=control, ntree=ntree)
-	key <- toString(ntree)
-	modellist[[key]] <- fit
+for (ntree in c(100,1000, 1500, 2000)) {
+fit <- train(factor(TARGET)~., data=train_data, method="rf", metric="Accuracy", tuneGrid=tunegrid,tuneLength = 50, trControl=control, ntree=ntree)
+key <- toString(ntree)
+modellist[[key]] <- fit
 }
-# compare results
+# compare results of all models (1000,1500 and 2000 trees)
 results <- resamples(modellist)
 summary(results)
 dotplot(results)
 
-print(modellist[4])
-# Predict Test results
-RF2_model.pred <- predict(modellist$`1000`, test_data)
-RF2_model.pred
+
+# Predict Test results 100 Trees
+RF100_model.pred <- predict(modellist$`100`, test_data)
+RF100_model.pred
 # Check Accuracy of Model 
-RF2_confus <- confusionMatrix(factor(RF2_model.pred),factor(test_data$TARGET))
+RF100_confus <- confusionMatrix(factor(RF100_model.pred),factor(test_data$TARGET))
 
+# Predict Test results 1000 Trees
+RF1000_model.pred <- predict(modellist$`1000`, test_data)
+RF1000_model.pred
+# Check Accuracy of Model 
+RF1000_confus <- confusionMatrix(factor(RF1000_model.pred),factor(test_data$TARGET))
 
-RF2_confus
+# Predict Test results 1500 Trees
+RF2000_model.pred <- predict(modellist$`2000`, test_data)
+RF2000_model.pred
+# Check Accuracy of Model 
+RF2000_confus <- confusionMatrix(factor(RF2000_model.pred),factor(test_data$TARGET))
 
+# Predict Test results 2000 Trees
+RF1500_model.pred <- predict(modellist$`1500`, test_data)
+RF1500_model.pred
+# Check Accuracy of Model 
+RF1500_confus <- confusionMatrix(factor(RF1500_model.pred),factor(test_data$TARGET))
+
+#Compare accuracy across all models created
+pred_table <- data.table(Model = c("Decision Tree","Random Forest 100 Trees","Random Forest 500 Trees","Random Forest 1000 Tress","Random Forest 1500 Trees","Random Forest 2000 Trees"),Accuracy = c(confus$overall[1],RF100_confus$overall[1],RF_confus$overall[1],RF1000_confus$overall[1],RF1500_confus$overall[1],RF2000_confus$overall[1]))
+
+pred_table
 
 ```
+
+We ran the Random forest (RF) model with 100,1000, 1500 and 2000 trees and compared there accuracy to our RF model with 500 trees and the Decision tree model. We can see the best model was the intial random forest with 500 trees. This had an accuracy of `r round(RF_confus$overall[1]*100,2)`
 
 
 # Evaluation
