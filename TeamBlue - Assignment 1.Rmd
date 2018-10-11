@@ -127,18 +127,11 @@ Also we realize that converting the variable SEX into M & F would be easier to v
 full_data$SEX<-ifelse(full_data$SEX==1,"M","F")
 ```
 
-If you see the attribute CHOL has int. values and from common knowledge we know that we can divide the cholestrol into ranges i.e Desirable if chol is <200,"Borderline High" is chol>=200 & <=239 and "High" if it is greater than 240. We create a new column for these ranges "CHOLRANGE".
+
+Lastly,we can see that the attributes('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET') are all factor variables so we conver them into factors
 
 ```{r, message=FALSE,warning=FALSE}
-full_data$CHOLRANGE[full_data$CHOL < 200] <- 'Desirable'
-full_data$CHOLRANGE[full_data$CHOL >=200 & full_data$CHOL <= 239] <- 'Borderline High'
-full_data$CHOLRANGE[full_data$CHOL >=240] <- 'High'
-```
-
-Lastly,we can see that the attributes('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET','CHOLRANGE') are all factor variables so we conver them into factors
-
-```{r, message=FALSE,warning=FALSE}
-factor_VARS <- c('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET','CHOLRANGE')
+factor_VARS <- c('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET')
 full_data[factor_VARS]<- lapply(full_data[factor_VARS],function(x) as.factor(x))
 ```
 
