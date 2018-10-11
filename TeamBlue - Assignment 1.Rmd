@@ -165,7 +165,6 @@ barplot(freq_tbl_sex,xlab = "SEX", ylab = "Number of Patients",main = "Bar chart
 
 Clearly the number of male patients in this dataset are more than the female patients.
 Let us now see the relation between the Gender and our Target.
-<<<<<<< HEAD
 
 ```{r, message=FALSE,warning=FALSE}
 freq_xtab_sex=xtabs(~SEX+TARGET)
@@ -173,15 +172,6 @@ barplot(freq_xtab_sex, legend=rownames(freq_xtab_sex), ylab="Number of People", 
 ```
 This shows that higher proportion of males were diagnosed with the heart disease.
 
-=======
-
-```{r, message=FALSE,warning=FALSE}
-freq_xtab_sex=xtabs(~SEX+TARGET)
-barplot(freq_xtab_sex, legend=rownames(freq_xtab_sex), ylab="Number of People", xlab="Target", col=c("pink","navyblue"), beside=T, las=1)
-```
-This shows that higher proportion of males were diagnosed with the heart disease.
-
->>>>>>> 65fe65f1b2226d4015f4d1a05e17357cb32f27b4
 ###CP(Chest Pain)
 ```{r, message=FALSE,warning=FALSE}
 attach(full_data)
