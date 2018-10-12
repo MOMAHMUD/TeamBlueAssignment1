@@ -620,6 +620,11 @@ Futhermore, we found that the top 3 important measurements which could determine
 
 Based on these findings, we will recommend Peter Munk to allocate more budget to improve the facilities and apparatus which are used to measure these attributes.
 
+##Next Steps
+
+The next step would be to try and acquire more data to train the model on.  Another step would be to try other classification models that do not use decision trees.  We could try Support Vector machines or Logistic Regression.
+
+
 # Deployment
 
 Given we have a model with fairly accurate prediction, we will deploy the model for the doctors to perform trial runs and receive feedback. 
