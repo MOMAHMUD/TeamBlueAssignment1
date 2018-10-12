@@ -15,7 +15,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 ```
 # Business Understanding
 
@@ -88,10 +88,10 @@ Now that the packages are loaded,we can load in the four datasets.
 
 ```{r, message=FALSE}
 
-data_cleveland <- read.csv(file.choose(),header = TRUE, na.strings = c("NA","","#NA","?"))
-data_hungarian <- read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
-data_switzerland <- read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
-data_VA <- read.csv(file.choose(), header = TRUE, na.strings = c("NA","","#NA","?"))
+data_cleveland <- read.csv("processed.cleveland.data.csv",header = TRUE, na.strings = c("NA","","#NA","?"))
+data_hungarian <- read.csv("processed.hungarian.data.csv", header = TRUE, na.strings = c("NA","","#NA","?"))
+data_switzerland <- read.csv("processed.switzerland.data.csv", header = TRUE, na.strings = c("NA","","#NA","?"))
+data_VA <- read.csv("processed.va.data.csv", header = TRUE, na.strings = c("NA","","#NA","?"))
 ```
 
 The next step will be to merge all the datasets into one.
@@ -385,12 +385,12 @@ full_data_truncated$TRESTBPS[full_data_truncated$TRESTBPS == 0] <- NA
 
 ## Impute Missing Values
 
-We decided to implement a K-neareast neighbour (KNN) algorithm to impute missing values. We chose this method because it work with both categorical and continous variables. KNN works by imputing the value based on the majority votes of K nearest neighbours.  To find the nearest neighbours we use a distance function (Euclidean Distance) for continous variables because we ranges for our continous variables are all different we need to tell the algorithm to re scale all our variables to the samescale. for categorical variables we use Hamming distance.  We chose K to be an odd number as this avoids ties in the voting process.
+We decided to implement a K-neareast neighbour (KNN) algorithm to impute missing values. We chose this method because it work with both categorical and continous variables. KNN works by imputing the value based on the majority votes of K nearest neighbours.  To find the nearest neighbours we use a distance function (Euclidean Distance) for continous variables. For our continous variables we need to ensure they aredistributed on the same ranges,we do this by telling the algorithm to re scale all our variables to the same scale. For categorical variables we use Hamming distance.  We chose K to be an odd number as this avoids ties in the voting process.
 
 After implementing KNN we check to see if the correalation between all the variables has shifted at all.  The correlation should not change after imputation and the graph corrgram show this.
 
 
-```{r, message=FALSE,warning=FALSE}
+```{r, message=FALSE,warning=FALSE,fig.show='hold',fig.width=3, fig.height=3}
 
 
 #Impute missing values using KNN algorithm,remove TARGET variable from KNN
@@ -407,7 +407,7 @@ knnOutput = knnImputation(knn_input, k=7,scale=T)
 #Check if all missing values have been imputeted
 summary(knnOutput)
 
-aggr_plot = aggr(knnOutput, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, labels=names(full_data), cex.axis=.7, gap=3, ylab=c("Histogram of missing data after Imputation","Pattern"))
+aggr_plot = aggr(knnOutput, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, labels=names(full_data), cex.axis=.7, gap=3, ylab=c("Missing data after KNN","Pattern"))
 
 #add target back to imputated data
 knnOutput$TARGET <- full_data$TARGET
@@ -418,6 +418,9 @@ corr2 <- corrgram(knnOutput, order=NULL, panel=panel.shade, text.panel=panel.txt
 main="Correlogram After Imputation")
 
 ```
+
+
+We can see that all the missing data has now been imputed and the correaltion between the variables has not shifted due to the new data.
 
 # Modelling
 
@@ -500,7 +503,7 @@ ggplot(importance)
 
 ```
 
-The most importance variable for prediction our Target are CP with value 4, EXANG with value 1, OLDPEAK, CP with value 2, THALACH, AGE, and SEX with value M.
+The most importance variable for prediction our Target are THALACH (Maximum Heart Rate Achieved), EXANG with value 1(Exercise Induced Angina), OLDPEAK (ST Depression Induced by Exercise Relative to Rest), CP with value 4(Chest Pain Type 4:Asymptomatic), and CP with value 2 (Chest Pain Type 2:atypical angina).
 
 ## Additional Model
 
@@ -542,16 +545,16 @@ plot(RF_model$finalModel)
 
 ```
 
-The Random Forest with 500 trees and mtry of`r bestmtry$mtry` had a overall accuracy of  `r round(RF_confus$overall[1]*100,2)` compared to the decision tree model of `r round(confus$overall[1]*100,2)`.  Like the decision tree model the random forest is better at accurately classify target values of 1.  In the above graph the green line shows the error on the TARGET value of 1, the red line shows the error of classify Target value of 0 and the black line shows the Out of bag error of the random forest.  From the chart it looks like the error has converged at around 100 trees, but it does look like it is starting to coverge again around 500 trees. What would happen if we were to add more trees?
+The Random Forest with 500 trees and mtry of`r bestmtry$mtry` had a overall accuracy of  `r round(RF_confus$overall[1]*100,2)` compared to the decision tree model of `r round(confus$overall[1]*100,2)`.  Like the decision tree model the random forest is better at accurately classify target values of 1.  In the above graph the green line shows the error on the TARGET value of 1, the red line shows the error of classify Target value of 0 and the black line shows the Out of bag error of the random forest.  From the chart it looks like the error has converged at around 200 trees, but it does look like it is starting to coverge again around 400 trees. What would happen if we were to add more trees?
 
 ### Find Optimal Tree
 
-```{r, message=FALSE,warning=FALSE}
+```{r, message=FALSE,warning=FALSE,tidy=TRUE}
 control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
 
 modellist <- list()
 # loop to iterate through random forest models with different number of trees
-for (ntree in c(100,1000, 1500, 2000)) {
+for (ntree in c(200,1000, 1500, 2000)) {
 fit <- train(factor(TARGET)~., data=train_data, method="rf", metric="Accuracy", tuneGrid=tunegrid,tuneLength = 50, trControl=control, ntree=ntree)
 key <- toString(ntree)
 modellist[[key]] <- fit
@@ -559,40 +562,39 @@ modellist[[key]] <- fit
 # compare results of all models (1000,1500 and 2000 trees)
 results <- resamples(modellist)
 summary(results)
-dotplot(results)
 
 # Predict Test results 100 Trees
-RF100_model.pred <- predict(modellist$`100`, test_data)
-RF100_model.pred
+RF200_model.pred <- predict(modellist$`200`, test_data)
+
 # Check Accuracy of Model 
-RF100_confus <- confusionMatrix(factor(RF100_model.pred),factor(test_data$TARGET))
+RF200_confus <- confusionMatrix(factor(RF200_model.pred),factor(test_data$TARGET))
 
 # Predict Test results 1000 Trees
 RF1000_model.pred <- predict(modellist$`1000`, test_data)
-RF1000_model.pred
+
 # Check Accuracy of Model 
 RF1000_confus <- confusionMatrix(factor(RF1000_model.pred),factor(test_data$TARGET))
 
 # Predict Test results 1500 Trees
 RF2000_model.pred <- predict(modellist$`2000`, test_data)
-RF2000_model.pred
+
 # Check Accuracy of Model 
 RF2000_confus <- confusionMatrix(factor(RF2000_model.pred),factor(test_data$TARGET))
 
 # Predict Test results 2000 Trees
 RF1500_model.pred <- predict(modellist$`1500`, test_data)
-RF1500_model.pred
+
 # Check Accuracy of Model 
 RF1500_confus <- confusionMatrix(factor(RF1500_model.pred),factor(test_data$TARGET))
 
 #Compare accuracy across all models created
-pred_table <- data.table(Model = c("Decision Tree","Random Forest 100 Trees","Random Forest 500 Trees","Random Forest 1000 Tress","Random Forest 1500 Trees","Random Forest 2000 Trees"),Accuracy = c(confus$overall[1],RF100_confus$overall[1],RF_confus$overall[1],RF1000_confus$overall[1],RF1500_confus$overall[1],RF2000_confus$overall[1]))
+pred_table <- data.table(Model = c("Decision Tree","Random Forest 200 Trees","Random Forest 500 Trees","Random Forest 1000 Tress","Random Forest 1500 Trees","Random Forest 2000 Trees"),Accuracy = c(confus$overall[1],RF200_confus$overall[1],RF_confus$overall[1],RF1000_confus$overall[1],RF1500_confus$overall[1],RF2000_confus$overall[1]))
 
 pred_table
 
 ```
 
-We ran the Random forest (RF) model with 100,1000, 1500 and 2000 trees and compared there accuracy to our RF model with 500 trees and the Decision tree model. We can see the best model was the intial random forest with 500 trees. This had an accuracy of `r round(RF_confus$overall[1]*100,2)`
+We ran the Random forest (RF) model with 100,1000, 1500 and 2000 trees and compared there accuracy to our RF model with 500 trees and the Decision tree model. We can see the best model was the random forest with 1500 trees. This had an accuracy of `r round(RF1500_confus$overall[1]*100,2)`
 
 
 # Evaluation
