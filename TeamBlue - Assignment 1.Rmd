@@ -120,28 +120,29 @@ full_data$TARGET <- ifelse(full_data$TARGET>=1,1,full_data$TARGET)
 table(full_data$TARGET)
 ```
 
-Also we realize that converting the variable SEX into M & F would be easier to visulaize instead of "1" and "0" respectively, so we replace them.
+Also we reckon that converting the variable SEX into M & F would be easier to understand instead of "1" and "0" respectively, so we replace them.
 
 ```{r, message=FALSE,warning=FALSE}
 full_data$SEX<-ifelse(full_data$SEX==1,"M","F")
 ```
 
-Lastly,we can see that the attributes('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET') are all factor variables so we conver them into factors
+Lastly,we can see that the attributes('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET') are all categorical variables so we convert them into factors
 
 ```{r, message=FALSE,warning=FALSE}
 factor_VARS <- c('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET')
 full_data[factor_VARS]<- lapply(full_data[factor_VARS],function(x) as.factor(x))
 ```
 
-Before we dig into data exploration let us see what our data looks like now after all the changes.
+Before we dig into data exploration, let us see what our data looks like now after all the changes.
+
 ```{r, message=FALSE,warning=FALSE}
 str(full_data)
 ```
 
 ###Data Analysis
 Now we explore the data. We can divide it into two categories:
-1. Categorical Features.
-2. Numerical Features
+* Categorical Features
+* Numerical Features
 
 ####Categorical Features
 Let us visualize the categorical data.
@@ -154,15 +155,15 @@ head(freq_tbl_sex)
 barplot(freq_tbl_sex,xlab = "SEX", ylab = "Number of Patients",main = "Bar chart of Gender of Patients ",col=c("pink","navyblue"))
 ```
 
-Clearly the number of male patients in this dataset are more than the female patients.
-Let us now see the relation between the Gender and our Target.
+Clearly the number of male patients in this dataset is more than the female patients.
+Let us now see the relationship between the gender and our target.
 
 ```{r, message=FALSE,warning=FALSE}
 freq_xtab_sex=xtabs(~SEX+TARGET)
 barplot(freq_xtab_sex, legend=rownames(freq_xtab_sex), ylab="Number of People", xlab="Target", col=c("pink","navyblue"), beside=T, las=1)
 ```
 
-This shows that higher proportion of males were diagnosed with the heart disease.
+The graph above shows that higher proportion of males was diagnosed with the heart disease.
 
 #####CP(Chest Pain)
 ```{r, message=FALSE,warning=FALSE}
@@ -170,7 +171,8 @@ freq_tbl_CP=table(CP)
 barplot(freq_tbl_CP,xlab = "Chest Pain Type", ylab = "Number of Patients",main = "Bar chart of Chest Pain",col=c("green","yellow","purple","red"))
 ```
 
-From the plot it is evident that there are more number of patients with CP Type 4 (Asymptomatic).
+From the plot it is evident that there is more number of patients with CP Type 4 (Asymptomatic).
+
 Now lets look at CP against our Target Variable.
 
 ```{r, message=FALSE,warning=FALSE}
@@ -178,7 +180,7 @@ freq_xtab_CP=xtabs(~CP+TARGET)
 barplot(freq_xtab_CP, legend=rownames(freq_xtab_CP), ylab="Patients", xlab="Target", col=c("green","yellow","purple","red"), beside=T, las=1)
 ```
 
-From this plot we can see that patients with CP (Chest Paint Type) 4 is more prone to have the heart disease.
+From the plot above, we can see that patients with CP (Chest Paint Type) 4 is more prone to have heart disease.
 
 #####FBS(Fasting Blood Sugar)
 We have more number of patients with low blood sugar i.e. <120mg/L as we can see from the following plot.
@@ -220,7 +222,7 @@ Most patients exhibited normal RESTECG results. However, a higher proportion of 
 
 #####EXANG - Exercise Induced Angina.
 
-We can see from the following plot that there are more noumber of individuals which do not have exercise induced angina.
+We can see from the following plot that there is more noumber of individuals who do not have exercise induced angina.
 
 ```{r, message=FALSE,warning=FALSE}
 freq_tbl_EXANG=table(EXANG)
@@ -353,46 +355,44 @@ We now visualize the missing data through a histogram.
 aggr_plot = aggr(full_data, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, labels=names(full_data), cex.axis=.7, gap=3, ylab=c("Histogram of missing data","Pattern"))
 ```
 
-Analyzing all the variables we found some that have missing values.  There was a couple variables that caught our attention **CA**  with `r round(sum(is.na(full_data$CA)) / nrow(full_data)*100)` % missing data, **SLOPE** with `r round(sum(is.na(full_data$SLOPE)) / nrow(full_data)*100)` % missing data 
-and **THAL** with `r round(sum(is.na(full_data$THAL)) / nrow(full_data)*100)` % missing data.  
+As we analyze all the variables, we found some attribute with substantial missing values.  There was a couple of variables that caught our attention where varable **CA**  with `r round(sum(is.na(full_data$CA)) / nrow(full_data)*100)` % missing data, **SLOPE** with `r round(sum(is.na(full_data$SLOPE)) / nrow(full_data)*100)` % missing data and **THAL** with `r round(sum(is.na(full_data$THAL)) / nrow(full_data)*100)` % missing data.  
 
-Other attributes have missing data as well but the issue is not as severe. But we will deal with these under the Data Preparation section.
+Other attributes have missing data as well but the issue is not as severe. We will deal with these under the Data Preparation section separately.
 
 ### Outliers
 
-Based on the boxplots above, we found that we have cholesterol level and resting blood pressure of zero on several data instances in which they don't make sense. We will treat these under the Data Preparation section. 
+Based on the boxplots above, we found that there are zero values for the cholesterol level and resting blood pressure. These observations are not physically possible they don't make sense. We will treat these under the Data Preparation section. 
 
 # Data Preparation
 
 Now that we are done with data exploration we can move on to data preparation.
 
-## Attributes with High Percent of Missing Data
-As mentioned above, there are three varibales which have a high percent of missing data we chose to remove them.
+## Attributes with High Percentage of Missing Data
+
+As mentioned above, there are three varibales which have a high percent of missing data. We chose to remove them so that they won't distort our prediction model.
 
 ```{r, message=FALSE,warning=FALSE} 
 full_data_truncated<-as.data.frame(full_data[, !names(full_data) %in% c("THAL","CA","SLOPE")])
 summary(full_data_truncated)
 ``` 
 
-## Zero Values for Cholesteral and Resting Blood Pressure Values
+## Zero Values for Cholesteral and Resting Blood Pressure Measurements
 
-We assume that the cholesteral and resting blood pressure values of zero are erroneous and we will treat them as missing:
+We assume that zero cholesteral and resting blood pressure values are erroneous so we will treat them as missing:
 
 ```{r, message=FALSE,warning=FALSE}
 full_data_truncated$CHOL[full_data_truncated$CHOL == 0] <- NA
 full_data_truncated$TRESTBPS[full_data_truncated$TRESTBPS == 0] <- NA
 ```
 
-## Impute Missing Values
+## Missing Value Imputations
 
-We decided to implement a K-neareast neighbour (KNN) algorithm to impute missing values. We chose this method because it work with both categorical and continous variables. KNN works by imputing the value based on the majority votes of K nearest neighbours.  To find the nearest neighbours we use a distance function (Euclidean Distance) for continous variables. For our continous variables we need to ensure they aredistributed on the same ranges,we do this by telling the algorithm to re scale all our variables to the same scale. For categorical variables we use Hamming distance.  We chose K to be an odd number as this avoids ties in the voting process.
+We decided to implement a K-neareast neighbour (KNN) algorithm to impute missing values. We chose this method because it works well with both categorical and continous variables. KNN works by imputing the value based on the majority votes of K nearest neighbours.  To find the nearest neighbours we use a distance function (Euclidean Distance) for continous variables. For our continuous variables we need to ensure that they are distributed on the same ranges. We do this by telling the algorithm to re-scale all our variables to the same scale. For categorical variables, we use Hamming distance.  We chose K to be an odd number as this will avoid ties in the voting process.
 
-After implementing KNN we check to see if the correalation between all the variables has shifted at all.  The correlation should not change after imputation and the graph corrgram show this.
+After implementing KNN we check to see if the correalation between all the variables has shifted at all.  The correlation should not change after imputation and the graph corrgrams show this.
 
 
 ```{r, message=FALSE,warning=FALSE,fig.show='hold',fig.width=3, fig.height=3}
-
-
 #Impute missing values using KNN algorithm,remove TARGET variable from KNN
 knn_input=as.data.frame(full_data_truncated[, !names(full_data_truncated) %in% c("TARGET")])
 #Confrim structure hasnot changed except for lost of target variable
@@ -420,7 +420,7 @@ main="Correlogram After Imputation")
 ```
 
 
-We can see that all the missing data has now been imputed and the correaltion between the variables has not shifted due to the new data.
+We can see that all the missing data has now been imputed and the correlations between the variables have not been shifted due to the imputed data.
 
 # Modelling
 
@@ -428,7 +428,7 @@ We can see that all the missing data has now been imputed and the correaltion be
 
 We now have the data ready to predict our target variable (Diagnosis of Heart Disease 0: < 50% diameter narrowing; 1: > 50% diameter narrowing).  We chose to start with a Decision Tree classification model as they are very intuitive and easy to interpret.  A decision tree works by creating a tree like graph based on differenct variable splits.  These splits are made by evaluating the entropy and Information Gain of each variable split of the data. We evaluate all splits to find the best one that reduces the entropy (messiness) and returns the highest infomration gained. This is recursively run until all data is classified or a stopping criteria is met.
 
-## Split into training & test sets
+## Split into Training & Test Sets
 
 ```{r, message=FALSE,warning=FALSE}
 #set.seed(456292)
@@ -446,7 +446,6 @@ prop.table(table(knnOutput$TARGET))
 train_data <- knnOutput[train_set,]
 test_data <- knnOutput[-train_set,]
 
-
 ```
 
 We split the data into 80% training data and 20% testing data, the data is balanced on the Target variable to ensure it is representative of the initial data set.
@@ -463,11 +462,9 @@ DT_model <- train(factor(TARGET)~., data=train_data, method="rpart",tuneLength =
 metric = "Accuracy",
 trControl = fitControl)
 
-
-
 ```
 
-We implemened K fold cross validation with 10 folds to find our optimal parameters for the desicion tree model.  The optimal parameters for our data was with a complexity parameter of `r DT_model$finalModel$tuneValue`.  By using K fold cross validation we are able to reduce overfitting and selection bias of the model to our training data.  The cross validation splits the data in 10 folds and creates a model using 9 folds as the training set, and the other fold as the test set.  It repeats this process for each different fold and the validation results are combined(average) from all models to create the final model.
+We implemented K fold cross validation with 10 folds to find our optimal parameters for the desicion tree model.  The optimal parameters for our data was with a complexity parameter of `r DT_model$finalModel$tuneValue`.  By using K fold cross validation we are able to reduce overfitting and selection bias of the model to our training data.  The cross validation splits the data in 10 folds and creates a model using 9 folds as the training set, and the other fold as the test set.  It repeats this process for each different fold and the validation results are combined(average) from all models to create the final model.
 
 ## Assess Model
 
@@ -483,8 +480,6 @@ confus <- confusionMatrix(DT_model.pred,factor(test_data$TARGET))
 confus
 # Plot Decision Tree
 fancyRpartPlot(DT_model$finalModel)
-
-
 
 ```
 
@@ -594,7 +589,7 @@ pred_table
 
 ```
 
-We ran the Random forest (RF) model with 100,1000, 1500 and 2000 trees and compared there accuracy to our RF model with 500 trees and the Decision tree model. We can see the best model was the random forest with 1500 trees. This had an accuracy of `r round(RF1500_confus$overall[1]*100,2)`
+We ran the Random forest (RF) model with 200, 1000, 1500 and 2000 trees and compared there accuracy to our RF model with 500 trees and the Decision tree model. We can see the best model was the random forest with 1500 trees. This had an accuracy of `r round(RF1500_confus$overall[1]*100,2)`
 
 
 # Evaluation
@@ -602,12 +597,29 @@ We ran the Random forest (RF) model with 100,1000, 1500 and 2000 trees and compa
 In summary, we have tried various models and tuning parameters and below summarizes the prediction accuracies:
 
 Model         | Prediction Accuracy
---------------|------------------
-...           | .....
+--------------|---------------------
+Decision Tree | 73.8%
+RF 200        | 80.8%
+RF 500        | 80.3%
+RF 1000       | 80.3%
+RF 1500       | 80.9%
+RF 2000       | 80.3%
 
+From the results above, we have the following observations:
 
-Once we have the business context filled out, just have to talk about the output of the model in terms of business context:
-* Comment on prediction accuracy and whether the model can be used for diagnosing patients
-* The top 3 measurements which could play a contributing factor to the heart disease diagnosis.
+* The random forest model is superior to the decision tree model as it is an ensemble model.
+* For random forest, the errors converge fairly quickly starting at 100 trees. So the accuracy didn't improve further with the number of trees greater than 100. 
+
+We reckon that 80% of prediction accuracy would provide a good foundation for further studies with the goal to use the model for clinical studies.
+
+Futhermore, we found that the top 3 important measurements which could determine the heart disease diagnosis is as follows:
+
+* THALACH (Maximum Heart Rate Achieved)
+* EXANG (Exercise Induced Angina)
+* OLDPEAK (ST Depression Induced by Exercise Relative to Rest)
+
+Based on these findings, we will recommend Peter Munk to allocate more budget to improve the facilities and apparatus which are used to measure these attributes.
 
 # Deployment
+
+Given we have a model with fairly accurate prediction, we will deploy the model for the doctors to perform trial runs and receive feedback. 
