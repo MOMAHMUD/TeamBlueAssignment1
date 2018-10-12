@@ -41,6 +41,24 @@ The data are collected from the UCI Machine Learning Repository site (https://ar
 
 The four datasets originally consist of 76 attributes. However, all of the experiments referred to a subset of 14 attributes in which the UCI site also provided with another version of the datasets with these 14 attributes. We took the liberty to use the 14-attribute datasets instead for our prediction exercise.
 
+## Data Description
+
+Variable Name | Description
+--------------|-------------------------------------------------------------------------------------------
+AGE           | Age in years
+SEX           | Sex: (1 = male; 0 = female)
+CP            | Chest Pain Type: (1:typical angina; 2:atypical angina; 3:non-anginal pain; 4:asymptomatic)
+TRESTBPS      | Resting Blood Pressure (in mm Hg on admission to the hospital)
+CHOL          | Serum Cholestoral in mg/dl
+FBS           | Fasting Blood Sugar > 120 mg/dl)  (1 = true; 0 = false)
+RESTECG       | Resting Electrocardiographic Results (0:normal; 1:having ST-T wave abnormality; 2:showing                   | probable or definite left ventricular hypertrophy) 
+THALACH       | Maximum Heart Rate Achieved
+EXANG         | Exercise Induced Angina (1 = yes; 0 = no)
+OLDPEAK       | ST Depression Induced by Exercise Relative to Rest 
+SLOPE         | The Slope of the Peak Exercise ST Segment (1:upsloping; 2:flat; 3:downsloping) 
+CA            | Number of Major Vessels (0-3) Colored by Flourosopy
+THAL          | 3 = normal; 6 = fixed defect; 7 = reversable defect
+TARGET        | Diagnosis of Heart Disease (0: < 50% diameter narrowing; 1: > 50% diameter narrowing)
 
 ## Data Exploration
 
@@ -63,7 +81,6 @@ library(DMwR)
 library(gridExtra)
 library(rattle)
 library(randomForest)
-library(mlbench)
 library(e1071)
 ```
 ### Load Datasets
@@ -89,27 +106,9 @@ Now lets look at the structure of the data.
 str(full_data)
 ```
 
-We've got a sense of our variables, their class type, and the first few observations of each. We know we're working with 920 observations of 14 variables. To make things a bit more explicit since a couple of the variable names aren't 100% illuminating, here's what we've got to deal with:
+We've got a sense of our variables, their class type, and the first few observations of each. We know we're working with 920 observations of 14 variables.
 
-Variable Name | Description
---------------|-------------------------------------------------------------------------------------------
-AGE           | Age in years
-SEX           | Sex: (1 = male; 0 = female)
-CP            | Chest Pain Type: (1:typical angina; 2:atypical angina; 3:non-anginal pain; 4:asymptomatic)
-TRESTBPS      | Resting Blood Pressure (in mm Hg on admission to the hospital)
-CHOL          | Serum Cholestoral in mg/dl
-FBS           | Fasting Blood Sugar > 120 mg/dl)  (1 = true; 0 = false)
-RESTECG       | Resting Electrocardiographic Results (0:normal; 1:having ST-T wave abnormality; 2:showing                          | probable or definite left ventricular hypertrophy) 
-THALACH       | Maximum Heart Rate Achieved
-EXANG         | Exercise Induced Angina (1 = yes; 0 = no)
-OLDPEAK       | ST Depression Induced by Exercise Relative to Rest 
-SLOPE         | The Slope of the Peak Exercise ST Segment (1:upsloping; 2:flat; 3:downsloping) 
-CA            | Number of Major Vessels (0-3) Colored by Flourosopy
-THAL          | 3 = normal; 6 = fixed defect; 7 = reversable defect
-TARGET        | Diagnosis of Heart Disease (0: < 50% diameter narrowing; 1: > 50% diameter narrowing)
-
-
-# Feature Engineering
+### Feature Engineering
 
 Upon initial inspection of the data, we found that the data convention for the TARGET attribute is inconsistent among the 4 datasets. Both Switzerland and VA datasets have the heart disease dignosis target variable with the values of 0, 1, 2, 3 and 4 instead of the values of 0 or 1. Here we will make the data format consistent with the data definition described above (i.e 0: < 50% diameter narrowing; 1: > 50% diameter narrowing). So we made the following adjustments on the TARGET attribute:
 
@@ -127,7 +126,6 @@ Also we realize that converting the variable SEX into M & F would be easier to v
 full_data$SEX<-ifelse(full_data$SEX==1,"M","F")
 ```
 
-
 Lastly,we can see that the attributes('SEX','CP','FBS','RESTECG','EXANG','SLOPE','CA','THAL','TARGET') are all factor variables so we conver them into factors
 
 ```{r, message=FALSE,warning=FALSE}
@@ -140,15 +138,14 @@ Before we dig into data exploration let us see what our data looks like now afte
 str(full_data)
 ```
 
-
-#DATA EXPLORATION
+###Data Analysis
 Now we explore the data. We can divide it into two categories:
 1. Categorical Features.
 2. Numerical Features
 
-##Categorical Features
+####Categorical Features
 Let us visualize the categorical data.
-###SEX
+#####SEX
 ```{r, message=FALSE,warning=FALSE}
 attach(full_data)
 freq_tbl_sex=table(SEX)
@@ -163,23 +160,27 @@ Let us now see the relation between the Gender and our Target.
 freq_xtab_sex=xtabs(~SEX+TARGET)
 barplot(freq_xtab_sex, legend=rownames(freq_xtab_sex), ylab="Number of People", xlab="Target", col=c("pink","navyblue"), beside=T, las=1)
 ```
+
 This shows that higher proportion of males were diagnosed with the heart disease.
 
-###CP(Chest Pain)
+#####CP(Chest Pain)
 ```{r, message=FALSE,warning=FALSE}
 attach(full_data)
 freq_tbl_CP=table(CP)
 barplot(freq_tbl_CP,xlab = "Chest Pain Type", ylab = "Number of Patients",main = "Bar chart of Chest Pain",col=c("green","yellow","purple","red"))
 ```
-From the plot it is evident that there are more number of patients with CP Type 4(asymptomatic).
-Now lets look at C.P w.r.t. our Target Variable.
+
+From the plot it is evident that there are more number of patients with CP Type 4 (Asymptomatic).
+Now lets look at CP against our Target Variable.
+
 ```{r, message=FALSE,warning=FALSE}
 freq_xtab_CP=xtabs(~CP+TARGET)
 barplot(freq_xtab_CP, legend=rownames(freq_xtab_CP), ylab="Patients", xlab="Target", col=c("green","yellow","purple","red"), beside=T, las=1)
 ```
-From this plot we can see that patients with CP(Chest paint Type) 4 is more prone to have the heart disease.
 
-###FBS(Fasting Blood Sugar)
+From this plot we can see that patients with CP (Chest Paint Type) 4 is more prone to have the heart disease.
+
+#####FBS(Fasting Blood Sugar)
 We have more number of patients with low blood sugar i.e. <120mg/L as we can see from the following plot.
 ```{r, message=FALSE,warning=FALSE}
 attach(full_data)
@@ -195,7 +196,7 @@ barplot(freq_xtab_FBS, legend=rownames(freq_xtab_FBS), ylab="Number of People", 
 ```
 The plot did not change much when the data was divided based on the presence of the heart disease although patients diagnosed with heart disease exhibited a slighlty higher level of blood sugar.
 
-###Rest ECG
+####Rest ECG
 ```{r, message=FALSE,warning=FALSE}
 attach(full_data)
 freq_tbl_RESTECG=table(RESTECG)
@@ -212,7 +213,7 @@ barplot(freq_xtab_RESTECG, legend=rownames(freq_xtab_RESTECG), ylab="Number of P
 ```
 Most patients exhibited normal RESTECG results. However, a higher proportion of diseased patients had abnormal ST wave patterns suggesting that this feature may contribute some predictive power.
 
-###EXANG- Exercise Induced Angina.
+#####EXANG- Exercise Induced Angina.
 We can see from the following plot that there are more noumber of individuals which do not have exercise induced angina.
 ```{r, message=FALSE,warning=FALSE}
 attach(full_data)
@@ -230,63 +231,129 @@ This is a strong predictive attribute.
 
 We will stop here as the remaining factor attributes have a lot of missing values.
 
-##Numeric Features
+####Numeric Features
 
-###Age
+#####Age
 Let us plot a histogram to see the distribution of ages.
 ```{r, message=FALSE,warning=FALSE}
 hist(full_data$AGE,main = "Distribution of Age",xlab = "Age",ylab = "Number of People")
 ```
+Now lets see the age distribution according to our Target.
+```{r, message=FALSE,warning=FALSE}
+ggplot(full_data, aes(AGE, fill = TARGET)) + 
+  geom_histogram() + 
+  theme_few()
+```
+We can see that the individuals diagnosed with heart disease have a slightly higher age.
 
+#####TRSETBPS(Resting Blood Pressure (in mm Hg on admission to the hospital))
+Let us check the distribution of TRESTBPS
+```{r, message=FALSE,warning=FALSE}
+hist(full_data$TRESTBPS,main = "Distribution of TRESTBPS",xlab = "TRESTBPS",ylab = "Number of People")
+```
+```{r, message=FALSE,warning=FALSE}
+ggplot(full_data, aes(TRESTBPS, fill = TARGET)) + 
+  geom_histogram() + 
+  theme_few()
+```
+We can see higher the TRESTBPS, higher are the chances of getting diagnosed with the heart disease.
+NOw lets us check the outliers in TRESTBPS.
+```{r, message=FALSE,warning=FALSE}
+boxplot(full_data$TRESTBPS,ylab='Resting blood pressure',main='Boxplot distribution of TRESTBPS')
+```
+#####CHOL(Serum Cholestoral in mg/dl)
+Let us check the distribution of TRESTBPS VS TARGET
+```{r, message=FALSE,warning=FALSE}
+ggplot(full_data, aes(CHOL, fill = TARGET)) + 
+  geom_histogram() + 
+  theme_few()
+```
+Box plot for cholestrol.
+```{r, message=FALSE,warning=FALSE}
+boxplot(full_data$CHOL,ylab='Cholestrol',main='Boxplot distribution of CHOL')
+```
+###THALACH(Maximum Heart Rate Achieved)
+```{r, message=FALSE,warning=FALSE}
+ggplot(full_data, aes(THALACH, fill = TARGET)) + 
+  geom_histogram() + 
+  theme_few()
+```
+This shows that the maximum heart rate was higher for the non-diseased individuals as compared to the diseased individuals.
+Lets check for outliers in this group.
+```{r, message=FALSE,warning=FALSE}
+boxplot(full_data$THALACH,ylab='Maximum heart rate',main='Boxplot distribution of THALACH')
+```
+#####OLDPEAK(ST Depression Induced by Exercise Relative to Rest)
+Let us check the distribution of OLDPEAK VS TARGET
+```{r, message=FALSE,warning=FALSE}
+ggplot(full_data, aes(OLDPEAK, fill = TARGET)) + 
+  geom_histogram() + 
+  theme_few()
+```
+We can see that higher the value for OLDPEAK there are more chances of the individual to be diagnosed with heart disease.
+Now lets check for outliers.
+```{r, message=FALSE,warning=FALSE}
+boxplot(full_data$OLDPEAK,ylab='ST Depression Induced by Exercise Relative to Rest',main='Boxplot distribution of OLDPEAK')
+```
 
-# Missing Data
+We would like to find out if there are any relationships among the numerical variables. We are using the GGPAIRS plot:
 
-Now we're ready to start exploring missing data and rectifying it through imputation.
+```{r, message=FALSE,warning=FALSE}
+ggpairs(full_data[, !names(full_data)%in% factor_VARS])
 
-##Summary of the data
+```
+
+Interestingly, the correlations among the numerical variables are not as strong. And this shows in the scatter plots.
+
+## Data Quality Verification
+
+### Missing Data
+
 First let us summarize the data and see how it looks like.
 ```{r, message=FALSE,warning=FALSE}
 summary(full_data)
 ```
 
+We now visualize the missing data through a histogram.
+
+```{r, message=FALSE,warning=FALSE}
+aggr_plot = aggr(full_data, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, labels=names(full_data), cex.axis=.7, gap=3, ylab=c("Histogram of missing data","Pattern"))
+```
+
 Analyzing all the variables we found some that have missing values.  There was a couple variables that caught our attention **CA**  with `r round(sum(is.na(full_data$CA)) / nrow(full_data)*100)` % missing data, **SLOPE** with `r round(sum(is.na(full_data$SLOPE)) / nrow(full_data)*100)` % missing data 
-and **THAL** with `r round(sum(is.na(full_data$THAL)) / nrow(full_data)*100)` % missing data.  Since these varibales have a high percent of missing data we chose to remove them.
+and **THAL** with `r round(sum(is.na(full_data$THAL)) / nrow(full_data)*100)` % missing data.  
+
+Other attributes have missing data as well but the issue is not as severe. But we will deal with these under the Data Preparation section.
+
+### Outliers
+
+Based on the boxplots above, we found that we have cholesterol level of zero on several data instances in which they don't make sense. We will treat these under the Data Preparation section. 
+
+# Data Preparation
+
+Now that we are done with data exploration we can move on to data preparation.
+
+## Attributes with High Percent of Missing Data
+As mentioned above, there are three varibales which have a high percent of missing data we chose to remove them.
 
 ```{r, message=FALSE,warning=FALSE} 
 full_data_truncated<-as.data.frame(full_data[, !names(full_data) %in% c("THAL","CA","SLOPE")])
 summary(full_data_truncated)
 ``` 
 
+## Zero Values for Cholesteral Values
+
+We assume that the cholesteral values of zero are erroneous and we will treat them as missing:
 
 ```{r, message=FALSE,warning=FALSE}
-#lets check for outliers in TRESTBPS,CHOL,THALACH AND OLDPEAK USING BOXPLOTS.
-boxplot(full_data_truncated$CHOL,ylab='Resting blood pressure',main='Boxplot distribution of Cholestrol')
-boxplot(full_data_truncated$TRESTBPS,ylab='Resting blood pressure',main='Boxplot distribution of TRESTBPS')
-boxplot(full_data_truncated$THALACH,ylab='Resting blood pressure',main='Boxplot distribution of THALACH')
-boxplot(full_data_truncated$OLDPEAK,ylab='ST Depression Induced by Exercise Relative to Rest',main='Boxplot distribution of OLDPEAK')
+full_data_truncated$CHOL[full_data_truncated$CHOL == 0] <- NA
 ```
-```{r, message=FALSE,warning=FALSE}
-
-#add some graphs to show before distribution
-
-
-ggpairs(full_data[, !names(full_data)%in% factor_VARS])
-
-ggpairs(full_data[, !names(full_data)%in% factor_VARS])
-
-aggr_plot = aggr(full_data, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, labels=names(full_data), cex.axis=.7, gap=3, ylab=c("Histogram of missing data","Pattern"))
-
-full_data_truncated<-as.data.frame(full_data[, !names(full_data) %in% c("THAL","CA","SLOPE")])
-
-
-```
-
-
-
 
 ## Impute Missing Values
 
 We decided to implement a K-neareast neighbour (KNN) algorithm to impute missing values. We chose this method because it work with both categorical and continous variables. KNN wokrs by imputing the value based on the majority votes of K nearest neighbours.  To find the nearest neighbours we use a distance function (Euclidean Distance) for continous variables because we ranges for our continous variables are all different we need to tell the algorithm to re scale all our variables to the samescale. for categorical variables we use Hamming distance.  We chose K to be an odd number as this avoids ties in the voting process.
+
+After implementing KNN we check to see if the correalation between all the variables has shifted at all.  The correlation should not change after imputation and the graph corrgram show this.
 
 
 ```{r, message=FALSE,warning=FALSE}
@@ -318,11 +385,7 @@ main="Correlogram After Imputation")
 
 ```
 
-After implementing KNN we check to see if the correalation between all the variables has shifted at all.  The correlation should not change after imputation and the graph corrgram show this.
-
-
 # Modelling
-
 
 ## Select Modelling Technique
 
@@ -369,8 +432,6 @@ trControl = fitControl)
 
 We implemened K fold cross validation with 10 folds to find our optimal parameters for the desicion tree model.  The optimal parameters for our data was with a complexity parameter of `r DT_model$finalModel$tuneValue`.  By using K fold cross validation we are able to reduce overfitting and selection bias of the model to our training data.  The cross validation splits the data in 10 folds and creates a model using 9 folds as the training set, and the other fold as the test set.  It repeats this process for each different fold and the validation results are combined(average) from all models to create the final model.
 
-
-
 ## Assess Model
 
 ### Accuracy
@@ -391,7 +452,6 @@ fancyRpartPlot(DT_model$finalModel)
 ```
 
 The Decision tree model we created had a `r round(confus$overall[1]*100,2)` % accuracy.  We were significanly better at predicting if the TARGET value 1: > 50% diameter narrowing, we were correct `r round(confus$byClass[2]*100,2)` % of the time.  One downside to having a high % of predictor TARGET 1, is that also classified a lot of false negatives.  Of test data that was 0: < 50% diameter narrowing, `r 100-round(confus$byClass[[1]]*100,2)` was incorrectly classified as 1: > 50% diameter narrowing.
-
 
 ### Variable importance
 
@@ -450,7 +510,6 @@ plot(RF_model$finalModel)
 
 The Random Forest with 500 trees and mtry of`r bestmtry$mtry` had a overall accuracy of  `r round(RF_confus$overall[1]*100,2)` compared to the decision tree model of `r round(confus$overall[1]*100,2)`.  Like the decision tree model the random forest is better at accurately classify target values of 1.  In the above graph the green line shows the error on the TARGET value of 1, the red line shows the error of classify Target value of 0 and the black line shows the Out of bag error of the random forest.  From the chart it looks like the error has converged at around 100 trees, but it does look like it is starting to coverge again around 500 trees. What would happen if we were to add more trees?
 
-
 ### Find Optimal Tree
 
 ```{r, message=FALSE,warning=FALSE}
@@ -467,7 +526,6 @@ modellist[[key]] <- fit
 results <- resamples(modellist)
 summary(results)
 dotplot(results)
-
 
 # Predict Test results 100 Trees
 RF100_model.pred <- predict(modellist$`100`, test_data)
@@ -505,7 +563,11 @@ We ran the Random forest (RF) model with 100,1000, 1500 and 2000 trees and compa
 
 # Evaluation
 
-Once we have the business context filled out, just have to talk about the output of the model in terms of business context
+In summary, we have tried various models and tuning parameters and below summarizes the prediction accuracies:
+
+Model         | Prediction Accuracy
+--------------|------------------
+...           | .....
 
 
 Once we have the business context filled out, just have to talk about the output of the model in terms of business context:
